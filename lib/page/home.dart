@@ -1,4 +1,5 @@
 import 'package:carrot_market_sample/repository/contents_repository.dart';
+import 'package:carrot_market_sample/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
@@ -35,13 +36,6 @@ class _HomeState extends State<Home> {
   //   super.didChangeDependencies();
   //   contentsRepository = ContentsRepository();
   // }
-
-  final oCcy = new NumberFormat("#,###", "ko_KR");
-  String calcStringToWon(String priceString) {
-    if (priceString == "무료나눔") return priceString;
-    oCcy.format(int.parse(priceString));
-    return "${oCcy.format(int.parse(priceString))}원";
-  }
 
   Widget _appBarWidget() {
     return AppBar(
@@ -122,6 +116,7 @@ class _HomeState extends State<Home> {
                     MaterialPageRoute(
                       builder: (BuildContext context) =>
                           DetailContentView(data: datas[index]),
+                      // DetailContentView 에 datas[index] 데이터를 data로 넘김
                     ),
                   );
                   print(datas[index]["title"]);
@@ -166,7 +161,8 @@ class _HomeState extends State<Home> {
                             ),
                             SizedBox(height: 5),
                             Text(
-                              calcStringToWon(datas[index]["price"].toString()),
+                              DataUtils.calcStringToWon(
+                                  datas[index]["price"].toString()),
                               style: TextStyle(fontWeight: FontWeight.w500),
                             ),
                             Expanded(
@@ -213,6 +209,7 @@ class _HomeState extends State<Home> {
     return FutureBuilder(
       future: _loadContents(),
       builder: (BuildContext context, dynamic snapshot) {
+        // snapshot 은 어떻게 데이터를 받은거지?
         if (snapshot.connectionState != ConnectionState.done) {
           // snapshot.connectionState : Future 가 완료되지 않으면 로딩처리
           return Center(child: CircularProgressIndicator());
@@ -230,6 +227,7 @@ class _HomeState extends State<Home> {
         if (snapshot.hasData) {
           // hasData 데이터가 있는지
           return _makeDataList(snapshot.data);
+          // 데이터 넘김
         }
 
         return Center(child: Text('해당 지역에 데이터가 없습니다.'));
