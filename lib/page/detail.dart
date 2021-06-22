@@ -1,5 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:carrot_market_sample/components/manor_temperature_widget.dart';
+import 'package:carrot_market_sample/repository/contents_repository.dart';
 import 'package:carrot_market_sample/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -22,6 +23,8 @@ class _DetailContentViewState extends State<DetailContentView>
   ScrollController _controller = ScrollController();
   AnimationController? _animationController;
   Animation? _colorTween;
+  bool isMyFavoriteContent = false;
+  ContentsRepository? contentsRepository;
 
   // ScrollController 스크롤 이벤트
   // _animationController = AnimationController(vsync: this);
@@ -29,6 +32,7 @@ class _DetailContentViewState extends State<DetailContentView>
   @override
   void initState() {
     super.initState();
+    contentsRepository = ContentsRepository();
     _animationController = AnimationController(vsync: this);
     // begin : 시작 Color , end : 끝 Color , .animate() 을 추가 해주면 됨
     _colorTween = ColorTween(begin: Colors.white, end: Colors.black)
@@ -47,6 +51,16 @@ class _DetailContentViewState extends State<DetailContentView>
         // 0~1 까지의 사이를 표현 : 0 : white , 1 : black
         _animationController!.value = scrollpositionToAplpha / 255;
       });
+    });
+    _loadMyFavoriteContentState();
+  }
+
+  _loadMyFavoriteContentState() async {
+    bool ck =
+        await contentsRepository!.isMyFavoritecontents(widget.data['cid']);
+    print(ck);
+    setState(() {
+      isMyFavoriteContent = ck;
     });
   }
 
@@ -325,13 +339,33 @@ class _DetailContentViewState extends State<DetailContentView>
       child: Row(
         children: [
           GestureDetector(
-            onTap: () {
-              print('관심상품 이벤트 발생');
+            onTap: () async {
+              if (isMyFavoriteContent) {
+                // isMyFavoriteContent : true 이면 :
+                // 좋아요가 눌러져있으면 한번더 누르면 삭제
+                await contentsRepository!
+                    .deleteMyFavoriteContnt(widget.data['cid']);
+              } else {
+                await contentsRepository!.addMyFavoriteContent(widget.data);
+              }
+              // addMyFavoriteContent 데이터 저장
+
+              setState(() {
+                isMyFavoriteContent = !isMyFavoriteContent;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  duration: Duration(milliseconds: 1000),
+                  content: Text(
+                    isMyFavoriteContent ? '관심목록에 추가 되었습니다' : '관심목록에 삭제 되었습니다.',
+                  )));
             },
             child: SvgPicture.asset(
-              'assets/svg/heart_off.svg',
+              isMyFavoriteContent
+                  ? 'assets/svg/heart_on.svg'
+                  : 'assets/svg/heart_off.svg',
               width: 25,
               height: 25,
+              color: Color(0xfff00f4f),
             ),
           ),
           Container(

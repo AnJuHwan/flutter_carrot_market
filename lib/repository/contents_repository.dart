@@ -1,4 +1,12 @@
-class ContentsRepository {
+import 'dart:convert';
+
+import 'package:carrot_market_sample/repository/local_storage_repository.dart';
+
+class ContentsRepository extends LocalStorageRepository {
+  // ContentsRepository 에 있는 Data들을
+  //LocalStorageRepository 에 참조하고 부를 수 있는 용도
+  final String MY_FAVORITE_STORE_KEY = "MY_FAVORITE_STORE_KEY";
+
   Map<String, dynamic> data = {
     "ara": [
       {
@@ -167,8 +175,91 @@ class ContentsRepository {
   };
 
   Future<dynamic> loadContentsFromLocation(String location) async {
-    // API 통신 location 값을 보내주면서
+    // API 통신 location 값을 보내주면서 인자값을 내보내줌
     await Future.delayed(Duration(microseconds: 1000));
     return data[location];
   }
+
+  Future<List?> loadFavoriteContents() async {
+    // addMyFavoriteContent , isMyFavoritecontents 같은로직을 하나로 묶음
+    String? jsonString = await this.getStoredValue(MY_FAVORITE_STORE_KEY);
+    if (jsonString != null) {
+      List<dynamic> json = jsonDecode(jsonString);
+      return json;
+    } else {
+      return null;
+    }
+  }
+
+  addMyFavoriteContent(Map<String, String> content) async {
+    // String? jsonString = await this.getStoredValue(MY_FAVORITE_STORE_KEY);
+    // List<dynamic> favoriteContentList = jsonDecode(jsonString!);
+    List<dynamic>? favoriteContentList = await loadFavoriteContents();
+    if (favoriteContentList == null || !(favoriteContentList is List)) {
+      // favoriteContentList is List : favoriteContentList 타입이 List가 아니면
+      // 초기화
+      favoriteContentList = [content];
+    } else {
+      // 리스트가 있으면 추가
+      favoriteContentList.add(content);
+    }
+    favoriteContentList.add(content);
+    // Map<String,String> 타입의 content를 받음
+
+    // this.StoreValue(MY_FAVORITE_STORE_KEY, jsonEncode(favoriteContentList));
+    updateFavoriteContent(favoriteContentList);
+  }
+
+  void updateFavoriteContent(List favoriteContentList) async {
+    await this
+        .StoreValue(MY_FAVORITE_STORE_KEY, jsonEncode(favoriteContentList));
+  }
+
+  deleteMyFavoriteContnt(String cid) async {
+    List<dynamic>? favoriteContentList = await loadFavoriteContents();
+    if (favoriteContentList != null && favoriteContentList is List) {
+      favoriteContentList.removeWhere((data) => data['cid'] == cid);
+      // List 타입을 remove 할 수 있음
+    }
+    // this.StoreValue(MY_FAVORITE_STORE_KEY, jsonEncode(favoriteContentList));
+    updateFavoriteContent(favoriteContentList!);
+  }
+
+  isMyFavoritecontents(String cid) async {
+    // jsonString : json타입의 String
+    // String? jsonString = await this.getStoredValue(MY_FAVORITE_STORE_KEY);
+
+    bool isMyFavoriteContents = false;
+    List? json = await loadFavoriteContents();
+
+    if (json == null || !(json is List)) {
+      // json is List : json 타입이 List가 아니면
+      return false;
+    } else {
+      for (dynamic data in json) {
+        if (data['cid'] == cid) {
+          isMyFavoriteContents = true;
+          break;
+        }
+      }
+    }
+    // print(json);
+    // json : 저장되어있는 데이터 cid : 선택한 데이터의 id
+    // cid == json[cid] 이면 true
+    return isMyFavoriteContents;
+    // cid == json['cid'];
+  }
 }
+
+
+// for in : 객체의 프로퍼티 키 열거 전용
+
+// var obj = { name: 'curryyou', job: 'engineer' }
+
+// for (var key in obj){
+//  console.log(`${key} : ${obj[key]}`);
+// }
+// name : curryyou
+// job : engineer
+
+// key값을 출력 obj객체안에 있는 key value를 조회
